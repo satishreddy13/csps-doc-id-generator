@@ -19,18 +19,20 @@ prefix  date   nano-token
 | 6–11 | 6 | Date in `YYMMDD` format |
 | 12–20 | 9 | Nanosecond-within-day in base36, zero-padded |
 
-**Example:** prefix `ABCDE`, date `2026-05-24`, time `14:32:07.123456789`
+**Example:** prefix `TEST1`, date `2026-05-24`, nano-token `U8KZXDGU0`
 ```
-ABCDE260524TJEVUJKPS
+TEST1260524U8KZXDGU0
 ```
+
+The 9-char nano-token encodes the nanosecond offset from midnight (0 – 86,399,999,999,999) in base36, zero-padded. Each nanosecond maps to a unique token — no separate sequence counter is needed.
 
 ### Uniqueness guarantee
 
-Each call atomically claims a nanosecond slot using a virtual clock per transformation run:
-- If the real nanosecond is newer than the last claimed → use it directly.
-- If two calls land on the exact same nanosecond → advance the virtual clock by 1.
+Each call atomically claims a unique nanosecond slot via a per-transformation virtual clock:
+- Real nanosecond is newer than last claimed → use it directly (normal case).
+- Two calls land on the exact same nanosecond → virtual clock advances by 1 (tie-break).
 
-This means there is **no sequence limit** — uniqueness is guaranteed regardless of throughput.
+There is **no sequence limit** and no wrap-around — the virtual clock advances monotonically for the lifetime of the transformation run.
 
 ---
 
@@ -40,9 +42,8 @@ Tested on PDI 11.0 (Apple Silicon, macOS):
 
 | Rows | Duplicates | Elapsed | Throughput |
 |------|-----------|---------|------------|
-| 10,000 | 0 | ~340 ms | ~29,000 rows/sec |
-| 50,000 | 0 | ~1,859 ms | ~26,900 rows/sec |
-| 100,000 | 0 | ~1,844 ms | ~54,200 rows/sec |
+| 50,000 | 0 | 1,859 ms | ~26,900 rows/sec |
+| 100,000 | 0 | 1,844 ms | ~54,200 rows/sec |
 
 ---
 
