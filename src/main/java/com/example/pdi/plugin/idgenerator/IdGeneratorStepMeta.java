@@ -77,7 +77,7 @@ public class IdGeneratorStepMeta extends BaseStepMeta implements StepMetaInterfa
 
   @Override
   public void setDefault() {
-    fieldName = "generated_id";
+    fieldName = "DOC_ID";
     prefix    = "XXXXX";
   }
 

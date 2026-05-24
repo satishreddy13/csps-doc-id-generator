@@ -70,14 +70,14 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
     formLayout.marginWidth  = Const.FORM_MARGIN;
     formLayout.marginHeight = Const.FORM_MARGIN;
     shell.setLayout(formLayout);
-    shell.setText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Title"));
+    shell.setText("CSPS DOC_ID Generator");
 
     int middle = props.getMiddlePct();
     int margin  = Const.MARGIN;
 
     // ---- Step name (mandatory first widget by PDI convention) ----
     wlStepname = new Label(shell, SWT.RIGHT);
-    wlStepname.setText(BaseMessages.getString(PKG, "System.Label.StepName"));
+    wlStepname.setText("Step Name");
     props.setLook(wlStepname);
     fdlStepname = new FormData();
     fdlStepname.left  = new FormAttachment(0, 0);
@@ -97,8 +97,8 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
 
     // ---- Output Field Name ----
     Label wlFieldName = new Label(shell, SWT.RIGHT);
-    wlFieldName.setText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.FieldName.Label"));
-    wlFieldName.setToolTipText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.FieldName.Tooltip"));
+    wlFieldName.setText("Field Name");
+    wlFieldName.setToolTipText("The name of the row field that will receive the generated ID");
     props.setLook(wlFieldName);
     FormData fdlFieldName = new FormData();
     fdlFieldName.left  = new FormAttachment(0, 0);
@@ -117,8 +117,8 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
 
     // ---- Prefix ----
     Label wlPrefix = new Label(shell, SWT.RIGHT);
-    wlPrefix.setText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Prefix.Label"));
-    wlPrefix.setToolTipText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Prefix.Tooltip"));
+    wlPrefix.setText("DOC_ID Prefix");
+    wlPrefix.setToolTipText("Exactly 5 characters prepended to every generated ID");
     props.setLook(wlPrefix);
     FormData fdlPrefix = new FormData();
     fdlPrefix.left  = new FormAttachment(0, 0);
@@ -139,8 +139,8 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
     // ---- OK / Cancel ----
     wOK     = new Button(shell, SWT.PUSH);
     wCancel = new Button(shell, SWT.PUSH);
-    wOK.setText(BaseMessages.getString(PKG,     "IdGeneratorStepDialog.Button.OK"));
-    wCancel.setText(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Button.Cancel"));
+    wOK.setText("OK");
+    wCancel.setText("Cancel");
 
     BaseStepDialog.positionBottomButtons((org.eclipse.swt.widgets.Composite) shell, new Button[]{ wOK, wCancel }, margin, wPrefix);
 
@@ -191,11 +191,11 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
 
   private void ok() {
     if (wFieldName.getText().trim().isEmpty()) {
-      showError(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Error.FieldNameEmpty"));
+      showError("Output field name must not be empty.");
       return;
     }
     if (wPrefix.getText().length() != 5) {
-      showError(BaseMessages.getString(PKG, "IdGeneratorStepDialog.Error.PrefixLength"));
+      showError("Prefix must be exactly 5 characters.");
       return;
     }
 
