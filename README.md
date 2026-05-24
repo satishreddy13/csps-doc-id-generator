@@ -65,9 +65,12 @@ When you place the step on the canvas and double-click it, the dialog shows two 
 
 ### 1. Build the PDI compile-only stubs
 
-PDI's Maven artifacts are not on a public repository. A set of minimal compile-only stubs is provided in the sibling `pdi-stubs` project:
+PDI's Maven artifacts are not on a public repository. A set of minimal compile-only stubs is provided in a companion repository:
+
+**https://github.com/satishreddy13/pdi-stubs**
 
 ```bash
+git clone https://github.com/satishreddy13/pdi-stubs.git
 cd pdi-stubs
 mvn install -DskipTests
 ```
