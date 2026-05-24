@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin
+  id="IdGeneratorStep"
+  image="ui/images/GEN.svg"
+  category="Transform"
+  i18nPackageName="com.example.pdi.plugin.idgenerator.messages"
+  description="Generates a structured 20-character unique ID per row"
+  name="CSPS DOC_ID Generator"
+  classname="com.example.pdi.plugin.idgenerator.IdGeneratorStepMeta">
+
+  <lib href="id-generator-plugin-1.0.0.jar"/>
+
+</plugin>

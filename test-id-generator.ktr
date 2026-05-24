@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<transformation>
+  <info>
+    <name>Test ID Generator</name>
+    <description>Generates 10 rows and runs them through the ID Generator step</description>
+    <trans_type>Normal</trans_type>
+  </info>
+
+  <step>
+    <name>Generate 10 Rows</name>
+    <type>RowGenerator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <name>dummy</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif>row</nullif>
+        <length>-1</length>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+      </field>
+    </fields>
+    <limit>100000</limit>
+    <never_ending>N</never_ending>
+    <interval_in_ms>5000</interval_in_ms>
+    <row_time_field>now</row_time_field>
+    <last_time_field>FiveSecondsAgo</last_time_field>
+    <GUI>
+      <xloc>112</xloc>
+      <yloc>160</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+
+  <step>
+    <name>ID Generator</name>
+    <type>IdGeneratorStep</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fieldname>generated_id</fieldname>
+    <prefix>TEST1</prefix>
+    <GUI>
+      <xloc>320</xloc>
+      <yloc>160</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+
+  <step>
+    <name>Write to File</name>
+    <type>TextFileOutput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <filename>/tmp/id-generator-test-output</filename>
+    <file>
+      <name>/tmp/id-generator-test-output</name>
+      <extention>txt</extention>
+      <do_not_open_new_file_init>N</do_not_open_new_file_init>
+      <create_parent_folder>Y</create_parent_folder>
+      <split>N</split>
+      <haspartno>N</haspartno>
+      <add_date>N</add_date>
+      <add_time>N</add_time>
+      <SpecifyFormat>N</SpecifyFormat>
+      <date_time_format/>
+      <add_to_result_filenames>Y</add_to_result_filenames>
+      <file_compression>None</file_compression>
+    </file>
+    <separator>,</separator>
+    <enclosure>&quot;</enclosure>
+    <enclosure_forced>N</enclosure_forced>
+    <enclosure_fix_disabled>N</enclosure_fix_disabled>
+    <header>Y</header>
+    <footer>N</footer>
+    <format>UNIX</format>
+    <encoding/>
+    <write_to_file>Y</write_to_file>
+    <fields>
+      <field>
+        <name>generated_id</name>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <nullif/>
+        <trim_type>none</trim_type>
+        <length>-1</length>
+        <precision>-1</precision>
+      </field>
+    </fields>
+    <GUI>
+      <xloc>528</xloc>
+      <yloc>160</yloc>
+      <draw>Y</draw>
+    </GUI>
+  </step>
+
+  <order>
+    <hop>
+      <from>Generate 10 Rows</from>
+      <to>ID Generator</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>ID Generator</from>
+      <to>Write to File</to>
+      <enabled>Y</enabled>
+    </hop>
+  </order>
+
+  <step_error_handling/>
+  <slave-step-copy-partition-distribution/>
+  <slave_transformation>N</slave_transformation>
+</transformation>

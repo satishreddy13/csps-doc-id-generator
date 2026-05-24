@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.example.pdi.plugin</groupId>
+  <artifactId>id-generator-plugin</artifactId>
+  <version>1.0.0</version>
+  <packaging>jar</packaging>
+  <name>PDI ID Generator Step Plugin</name>
+
+  <properties>
+    <maven.compiler.source>11</maven.compiler.source>
+    <maven.compiler.target>11</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!--
+      Pentaho 9.4 build tag. Swap in an exact released build tag once confirmed
+      available from the Hitachi Vantara Artifactory, e.g. 9.4.0.0-343.
+      If the Artifactory is unreachable, build pentaho-kettle from source at
+      the 9.4 branch and install locally: mvn install -pl core,engine,ui -am -DskipTests
+    -->
+    <pdi.version>9.4.0.0-SNAPSHOT</pdi.version>
+  </properties>
+
+  <!--
+    PDI dependencies are resolved from the local Maven repository (~/.m2).
+    The pdi-stubs project (sibling directory) installs compile-only stubs.
+    Build stubs first: cd ../pdi-stubs && mvn install
+    When deploying, the real PDI jars on the PDI classpath are used at runtime.
+  -->
+
+  <!-- ============================================================
+       Dependencies – all PDI artifacts are "provided" because they
+       live on the PDI classpath at runtime.
+       ============================================================ -->
+  <dependencies>
+
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-core</artifactId>
+      <version>${pdi.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-engine</artifactId>
+      <version>${pdi.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho-kettle</groupId>
+      <artifactId>kettle-ui-swt</artifactId>
+      <version>${pdi.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+
+    <!-- SWT for macOS ARM – provided at runtime by PDI's own SWT bundle. -->
+    <dependency>
+      <groupId>org.eclipse.platform</groupId>
+      <artifactId>org.eclipse.swt.cocoa.macosx.aarch64</artifactId>
+      <version>3.130.0</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>pentaho</groupId>
+      <artifactId>metastore</artifactId>
+      <version>${pdi.version}</version>
+      <scope>provided</scope>
+      <exclusions>
+        <exclusion><groupId>*</groupId><artifactId>*</artifactId></exclusion>
+      </exclusions>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>false</filtering>
+      </resource>
+    </resources>
+
+    <plugins>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <!--
+        Assembly plugin – produces the deployable zip.
+        Unzip into <PDI_HOME>/plugins/steps/ and restart Spoon.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <id>create-plugin-zip</id>
+            <phase>package</phase>
+            <goals><goal>single</goal></goals>
+            <configuration>
+              <appendAssemblyId>true</appendAssemblyId>
+              <descriptors>
+                <descriptor>src/main/resources/assembly.xml</descriptor>
+              </descriptors>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+    </plugins>
+  </build>
+
+</project>

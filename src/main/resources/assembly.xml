@@ -1,0 +1,51 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.1"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.1
+              http://maven.apache.org/xsd/assembly-2.1.1.xsd">
+
+  <id>plugin</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+
+  <!--
+    The zip unfolds as: id-generator-plugin/
+    Drop the unzipped folder into <PDI_HOME>/plugins/steps/
+  -->
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <baseDirectory>id-generator-plugin</baseDirectory>
+
+  <fileSets>
+    <!-- Compiled plugin jar -->
+    <fileSet>
+      <directory>${project.build.directory}</directory>
+      <includes>
+        <include>${project.artifactId}-${project.version}.jar</include>
+      </includes>
+      <outputDirectory>/</outputDirectory>
+    </fileSet>
+
+    <!-- plugin.xml descriptor -->
+    <fileSet>
+      <directory>src/main/resources</directory>
+      <includes>
+        <include>plugin.xml</include>
+      </includes>
+      <outputDirectory>/</outputDirectory>
+    </fileSet>
+  </fileSets>
+
+  <!--
+    No runtime-scoped third-party dependencies to bundle.
+    If you later add compile-scope libs, uncomment:
+
+  <dependencySets>
+    <dependencySet>
+      <useProjectArtifact>false</useProjectArtifact>
+      <outputDirectory>/lib</outputDirectory>
+      <scope>runtime</scope>
+    </dependencySet>
+  </dependencySets>
+  -->
+
+</assembly>
