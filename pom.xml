@@ -15,6 +15,8 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Override with -Dinclude.performance=true to run performance tests too -->
+    <performance.test.exclude>**/*PerformanceTest.java</performance.test.exclude>
     <!--
       Pentaho 9.4 build tag. Swap in an exact released build tag once confirmed
       available from the Hitachi Vantara Artifactory, e.g. 9.4.0.0-343.
@@ -85,6 +87,15 @@
       </exclusions>
     </dependency>
 
+    <!-- Test dependencies -->
+
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>5.10.2</version>
+      <scope>test</scope>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -124,6 +135,19 @@
         Assembly plugin – produces the deployable zip.
         Unzip into <PDI_HOME>/plugins/steps/ and restart Spoon.
       -->
+      <!-- JUnit 5 runner -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.2.5</version>
+        <configuration>
+          <!-- Performance tests are slow; exclude by default; run with -Dinclude.performance=true -->
+          <excludes>
+            <exclude>${performance.test.exclude}</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
