@@ -77,45 +77,55 @@ class IdFormatTest {
         assertEquals("ABCDE", id.substring(0, 5));
     }
 
+    // NOTE on this whole block: these five tests originally asserted the
+    // *old* behavior - a wrong-length Manual prefix was silently
+    // space-padded/truncated rather than rejected. That behavior was
+    // deliberately replaced (see IdGeneratorStep.processRow()'s length
+    // check, added for the prefix-source feature): a wrong-length prefix
+    // now fails loudly with a KettleException naming the source, the
+    // value, and its length, for *all* three prefix sources including
+    // Manual - not silently producing a subtly-wrong ID. Updated in place
+    // to assert the new, intentional behavior rather than deleted, to
+    // keep the case numbering below meaningful.
+
     @Test
-    @DisplayName("prefix shorter than 5 chars is left-padded with spaces")
-    void prefix_shorterThanFive_paddedWithSpaces() throws Exception {
-        // "AB" (2 chars) → "   AB" (spaces on left)
-        String id = singleId(TestableStep.metaWithPrefix("AB"));
-        assertEquals("   AB", id.substring(0, 5),
-            "Expected space-padded prefix; got: '" + id.substring(0, 5) + "'");
+    @DisplayName("prefix shorter than 5 chars throws KettleException")
+    void prefix_shorterThanFive_throwsKettleException() {
+        org.pentaho.di.core.exception.KettleException ex = assertThrows(
+            org.pentaho.di.core.exception.KettleException.class,
+            () -> singleId(TestableStep.metaWithPrefix("AB")));
+        assertTrue(ex.getMessage().contains("AB"));
+        assertTrue(ex.getMessage().contains("length: 2"));
     }
 
     @Test
-    @DisplayName("empty prefix produces five spaces")
-    void prefix_empty_isFiveSpaces() throws Exception {
-        String id = singleId(TestableStep.metaWithPrefix(""));
-        assertEquals("     ", id.substring(0, 5),
-            "Expected 5 spaces for empty prefix");
+    @DisplayName("empty prefix throws KettleException")
+    void prefix_empty_throwsKettleException() {
+        org.pentaho.di.core.exception.KettleException ex = assertThrows(
+            org.pentaho.di.core.exception.KettleException.class,
+            () -> singleId(TestableStep.metaWithPrefix("")));
+        assertTrue(ex.getMessage().contains("length: 0"));
     }
 
     @Test
-    @DisplayName("prefix longer than 5 chars is truncated to 5")
-    void prefix_longerThanFive_isTruncated() throws Exception {
-        String id = singleId(TestableStep.metaWithPrefix("TOOLONG"));
-        assertEquals("TOOLONG".substring(0, 5), id.substring(0, 5));
+    @DisplayName("prefix longer than 5 chars throws KettleException")
+    void prefix_longerThanFive_throwsKettleException() {
+        org.pentaho.di.core.exception.KettleException ex = assertThrows(
+            org.pentaho.di.core.exception.KettleException.class,
+            () -> singleId(TestableStep.metaWithPrefix("TOOLONG")));
+        assertTrue(ex.getMessage().contains("TOOLONG"));
+        assertTrue(ex.getMessage().contains("length: 7"));
     }
 
     @Test
-    @DisplayName("null prefix is handled without exception")
-    void prefix_null_doesNotThrow() {
+    @DisplayName("null prefix throws KettleException rather than silently producing a blank segment")
+    void prefix_null_throwsKettleException() {
         IdGeneratorStepMeta meta = TestableStep.defaultMeta();
         meta.setPrefix(null);
-        assertDoesNotThrow(() -> singleId(meta));
-    }
-
-    @Test
-    @DisplayName("null prefix produces a 5-char (space-padded) prefix segment")
-    void prefix_null_producesFiveCharSegment() throws Exception {
-        IdGeneratorStepMeta meta = TestableStep.defaultMeta();
-        meta.setPrefix(null);
-        String id = singleId(meta);
-        assertEquals(5, id.substring(0, 5).length());
+        org.pentaho.di.core.exception.KettleException ex = assertThrows(
+            org.pentaho.di.core.exception.KettleException.class,
+            () -> singleId(meta));
+        assertTrue(ex.getMessage().contains("length: 0"));
     }
 
     // -----------------------------------------------------------------------

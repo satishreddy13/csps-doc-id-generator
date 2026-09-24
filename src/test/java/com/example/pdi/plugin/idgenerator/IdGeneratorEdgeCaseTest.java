@@ -22,36 +22,44 @@ class IdGeneratorEdgeCaseTest {
     // Null / missing configuration (cases 68–69)
     // -----------------------------------------------------------------------
 
-    @Test
-    @DisplayName("null prefix in meta does not throw NullPointerException")
-    void nullPrefix_doesNotThrow() {
-        IdGeneratorStepMeta meta = TestableStep.defaultMeta();
-        meta.setPrefix(null);
-        assertDoesNotThrow(() -> {
-            TestableStep step = new TestableStep(UUID.randomUUID().toString());
-            step.generateIds(meta, 3);
-        });
-    }
+    // NOTE: these three tests originally asserted the *old* behavior - a
+    // null/empty Manual prefix was silently space-padded rather than
+    // rejected. That was deliberately replaced by a length check in
+    // IdGeneratorStep.processRow() (added for the prefix-source feature):
+    // a wrong-length prefix now fails with a clear KettleException for
+    // all three prefix sources, Manual included. Updated in place to
+    // assert the new, intentional behavior - a graceful, informative
+    // KettleException, not a raw NullPointerException - rather than
+    // deleted, to preserve the original "doesn't crash ungracefully"
+    // intent of this test.
 
     @Test
-    @DisplayName("null prefix produces a valid 20-char ID")
-    void nullPrefix_produces20CharId() throws Exception {
+    @DisplayName("null prefix in meta throws a clear KettleException, not a raw NullPointerException")
+    void nullPrefix_throwsKettleExceptionNotNPE() {
         IdGeneratorStepMeta meta = TestableStep.defaultMeta();
         meta.setPrefix(null);
         TestableStep step = new TestableStep(UUID.randomUUID().toString());
-        List<String> ids = step.generateIds(meta, 1);
-        assertFalse(ids.isEmpty());
-        assertEquals(20, ids.get(0).length());
+        assertThrows(org.pentaho.di.core.exception.KettleException.class,
+            () -> step.generateIds(meta, 3));
     }
 
     @Test
-    @DisplayName("empty prefix produces a valid 20-char ID")
-    void emptyPrefix_produces20CharId() throws Exception {
+    @DisplayName("null prefix throws KettleException rather than producing an ID")
+    void nullPrefix_throwsRatherThanProducingAnId() {
+        IdGeneratorStepMeta meta = TestableStep.defaultMeta();
+        meta.setPrefix(null);
+        TestableStep step = new TestableStep(UUID.randomUUID().toString());
+        assertThrows(org.pentaho.di.core.exception.KettleException.class,
+            () -> step.generateIds(meta, 1));
+    }
+
+    @Test
+    @DisplayName("empty prefix throws KettleException rather than producing an ID")
+    void emptyPrefix_throwsRatherThanProducingAnId() {
         IdGeneratorStepMeta meta = TestableStep.metaWithPrefix("");
         TestableStep step = new TestableStep(UUID.randomUUID().toString());
-        List<String> ids = step.generateIds(meta, 1);
-        assertFalse(ids.isEmpty());
-        assertEquals(20, ids.get(0).length());
+        assertThrows(org.pentaho.di.core.exception.KettleException.class,
+            () -> step.generateIds(meta, 1));
     }
 
     // -----------------------------------------------------------------------
