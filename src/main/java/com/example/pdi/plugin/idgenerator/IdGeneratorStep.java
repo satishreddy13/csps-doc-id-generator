@@ -9,6 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowDataUtil;
+import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
 import org.pentaho.di.trans.step.BaseStep;
@@ -53,7 +54,7 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
   /** Nanoseconds in one full day. The nano token wraps at this value. */
   private static final long MAX_NANO_IN_DAY = 86_400_000_000_000L; // 24 * 60 * 60 * 1e9
 
-  private static final int PREFIX_LEN = 5;
+  static final int PREFIX_LEN = 5; // package-private: referenced directly by tests
   private static final int NANO_PAD   = 9; // base36 chars for nanosecond token
 
   private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyMMdd");
@@ -88,6 +89,23 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
       return false;
     }
     SEQUENCE_MAP.putIfAbsent(getRunKey(), new AtomicLong(-1L));
+
+    IdGeneratorStepMeta meta = (IdGeneratorStepMeta) smi;
+    IdGeneratorStepData data = (IdGeneratorStepData) sdi;
+
+    // The variable's value can't change mid-run, so resolve it once here
+    // rather than on every row.
+    if (IdGeneratorStepMeta.SOURCE_PARAMETER.equals(meta.getPrefixSourceType())) {
+      // If the named variable/parameter is genuinely unset, Kettle's
+      // environmentSubstitute() leaves the "${NAME}" placeholder text
+      // unresolved rather than returning null/empty - which is actually
+      // useful here: the length check in processRow() will then fail with
+      // an error message showing the literal "${NAME}" text, an
+      // unmistakable, self-diagnosing symptom of an unset variable.
+      String name = meta.getPrefixParameter() == null ? "" : meta.getPrefixParameter();
+      data.resolvedParameterPrefix = environmentSubstitute("${" + name + "}");
+    }
+
     return true;
   }
 
@@ -113,9 +131,25 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
       first = false;
       data.outputRowMeta = getInputRowMeta().clone();
       meta.getFields(data.outputRowMeta, getStepname(), null, null, this, null, null);
+
+      if (IdGeneratorStepMeta.SOURCE_FIELD.equals(meta.getPrefixSourceType())) {
+        data.prefixFieldIndex = getInputRowMeta().indexOfValue(meta.getPrefixField());
+        if (data.prefixFieldIndex < 0) {
+          throw new KettleException(
+              "Prefix field not found in input stream: " + meta.getPrefixField());
+        }
+      }
     }
 
-    String id = generateId(meta);
+    String rawPrefix = resolvePrefix(meta, data, getInputRowMeta(), inputRow);
+    if (rawPrefix == null || rawPrefix.length() != PREFIX_LEN) {
+      throw new KettleException(
+          "Prefix must be exactly " + PREFIX_LEN + " characters (source: "
+          + meta.getPrefixSourceType() + ", value: \"" + rawPrefix + "\", length: "
+          + (rawPrefix == null ? 0 : rawPrefix.length()) + ")");
+    }
+
+    String id = generateId(rawPrefix);
 
     Object[] outputRow = RowDataUtil.addValueData(inputRow, data.outputRowMeta.size() - 1, id);
     putRow(data.outputRowMeta, outputRow);
@@ -131,14 +165,49 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
   // ID generation
   // -----------------------------------------------------------------------
 
-  private String generateId(IdGeneratorStepMeta meta) {
+  /**
+   * Resolves the raw prefix text according to the step's configured source.
+   * Returned value is NOT yet validated for length - the caller
+   * (processRow()) does that, since it has the row-level error-message
+   * context.
+   *
+   * Package-private (not private) so unit tests can call it directly
+   * without needing to drive it through the full BaseStep/processRow()
+   * lifecycle.
+   */
+  String resolvePrefix(IdGeneratorStepMeta meta, IdGeneratorStepData data,
+      RowMetaInterface inputRowMeta, Object[] inputRow) throws KettleException {
+
+    String sourceType = meta.getPrefixSourceType();
+
+    if (IdGeneratorStepMeta.SOURCE_PARAMETER.equals(sourceType)) {
+      return data.resolvedParameterPrefix;
+    }
+
+    if (IdGeneratorStepMeta.SOURCE_FIELD.equals(sourceType)) {
+      return inputRowMeta.getString(inputRow, data.prefixFieldIndex);
+    }
+
+    // SOURCE_MANUAL, and the fallback for a null sourceType on a step
+    // whose meta somehow wasn't run through loadXML()/readRep()/setDefault()
+    // (shouldn't normally happen, but this keeps old behavior rather than
+    // throwing in that edge case).
+    return meta.getPrefix();
+  }
+
+  /**
+   * Formats the 20-character ID from an already-validated (exactly
+   * PREFIX_LEN characters) prefix.
+   *
+   * Package-private (not private) so unit tests can call it directly.
+   */
+  String generateId(String rawPrefix) {
     // Single instant so date and nano-token are always consistent.
     Instant wallClock = Instant.now();
     ZonedDateTime zdt  = wallClock.atZone(ZoneId.systemDefault());
 
-    // Part 1 – prefix (5 chars)
-    String rawPrefix = meta.getPrefix() == null ? "" : meta.getPrefix();
-    String part1 = padOrTruncate(rawPrefix, PREFIX_LEN, ' ');
+    // Part 1 – prefix (5 chars, already validated by the caller)
+    String part1 = rawPrefix;
 
     // Part 2 – date YYMMDD (6 chars)
     String part2 = zdt.format(DATE_FMT);
@@ -194,11 +263,5 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
     for (int i = s.length(); i < width; i++) sb.append(padChar);
     sb.append(s);
     return sb.toString();
-  }
-
-  private static String padOrTruncate(String s, int width, char padChar) {
-    if (s.length() == width) return s;
-    if (s.length() > width)  return s.substring(0, width);
-    return leftPad(s, width, padChar);
   }
 }

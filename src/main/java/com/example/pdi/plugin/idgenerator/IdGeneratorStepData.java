@@ -15,6 +15,15 @@ public class IdGeneratorStepData extends BaseStepData implements StepDataInterfa
   /** Cached output row metadata, built once on the first row and reused. */
   public RowMetaInterface outputRowMeta;
 
+  /** Resolved once in init() when prefixSourceType == SOURCE_PARAMETER -
+   *  the variable's value doesn't change mid-run, so there is no need to
+   *  re-resolve it on every row. */
+  public String resolvedParameterPrefix;
+
+  /** Row field index resolved once on the first row when
+   *  prefixSourceType == SOURCE_FIELD. -1 until resolved. */
+  public int prefixFieldIndex = -1;
+
   public IdGeneratorStepData() {
     super();
   }
