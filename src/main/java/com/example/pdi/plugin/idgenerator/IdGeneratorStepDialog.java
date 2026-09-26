@@ -3,6 +3,8 @@ package com.example.pdi.plugin.idgenerator;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StackLayout;
 import org.eclipse.swt.events.ModifyListener;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.ShellAdapter;
@@ -187,9 +189,27 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
     wPrefix.setTextLimit(5);   // widget-level hard limit: user cannot type more than 5 chars
     FormData fdPrefix = new FormData();
     fdPrefix.left  = new FormAttachment(middle, 0);
-    fdPrefix.right = new FormAttachment(100, 0);
+    fdPrefix.right = new FormAttachment(100, -22);
     fdPrefix.top   = new FormAttachment(0, 0);
     wPrefix.setLayoutData(fdPrefix);
+
+    Label wPrefixHelp = new Label(manualPanel, SWT.CENTER | SWT.BORDER);
+    wPrefixHelp.setText("?");
+    wPrefixHelp.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
+    wPrefixHelp.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+    wPrefixHelp.setToolTipText("Click for help using this field");
+    props.setLook(wPrefixHelp);
+    FormData fdPrefixHelp = new FormData();
+    fdPrefixHelp.left   = new FormAttachment(wPrefix, margin);
+    fdPrefixHelp.right  = new FormAttachment(100, 0);
+    fdPrefixHelp.top    = new FormAttachment(0, 0);
+    fdPrefixHelp.bottom = new FormAttachment(wPrefix, 0, SWT.BOTTOM);
+    wPrefixHelp.setLayoutData(fdPrefixHelp);
+    wPrefixHelp.addMouseListener(new MouseAdapter() {
+      @Override public void mouseUp(MouseEvent e) {
+        showManualHelp();
+      }
+    });
 
     // Parameter panel: bare variable/parameter name, resolved once per run.
     parameterPanel = new Composite(prefixStackComposite, SWT.NONE);
@@ -209,9 +229,27 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
     wPrefixParameter.addModifyListener(lsMod);
     FormData fdPrefixParameter = new FormData();
     fdPrefixParameter.left  = new FormAttachment(middle, 0);
-    fdPrefixParameter.right = new FormAttachment(100, 0);
+    fdPrefixParameter.right = new FormAttachment(100, -22);
     fdPrefixParameter.top   = new FormAttachment(0, 0);
     wPrefixParameter.setLayoutData(fdPrefixParameter);
+
+    Label wPrefixParameterHelp = new Label(parameterPanel, SWT.CENTER | SWT.BORDER);
+    wPrefixParameterHelp.setText("?");
+    wPrefixParameterHelp.setForeground(display.getSystemColor(SWT.COLOR_BLUE));
+    wPrefixParameterHelp.setCursor(display.getSystemCursor(SWT.CURSOR_HAND));
+    wPrefixParameterHelp.setToolTipText("Click for help using this field");
+    props.setLook(wPrefixParameterHelp);
+    FormData fdPrefixParameterHelp = new FormData();
+    fdPrefixParameterHelp.left   = new FormAttachment(wPrefixParameter, margin);
+    fdPrefixParameterHelp.right  = new FormAttachment(100, 0);
+    fdPrefixParameterHelp.top    = new FormAttachment(0, 0);
+    fdPrefixParameterHelp.bottom = new FormAttachment(wPrefixParameter, 0, SWT.BOTTOM);
+    wPrefixParameterHelp.setLayoutData(fdPrefixParameterHelp);
+    wPrefixParameterHelp.addMouseListener(new MouseAdapter() {
+      @Override public void mouseUp(MouseEvent e) {
+        showParameterHelp();
+      }
+    });
     Label wlParameterNote = new Label(parameterPanel, SWT.WRAP);
     wlParameterNote.setText("Resolved once when the step starts - the same prefix is used for every "
         + "row in this run. Its value must be exactly 5 characters, or the step will fail with a "
@@ -398,6 +436,42 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
   private void showError(String message) {
     MessageBox mb = new MessageBox(shell, SWT.ICON_ERROR | SWT.OK);
     mb.setMessage(message);
+    mb.open();
+  }
+
+  private void showManualHelp() {
+    MessageBox mb = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+    mb.setText("Using the DOC_ID Prefix field");
+    mb.setMessage(
+        "Type the literal 5-character prefix to prepend to every generated ID in this "
+        + "step, e.g. TEST1.\n\n"
+        + "This value is fixed at design time - it is the same for every row and every "
+        + "run of this transformation. If you need the prefix to come from outside the "
+        + "transformation (a parameter, a variable, or an upstream field), switch "
+        + "\"Prefix Source\" above to \"Parameter or Variable\" or \"Field from stream\" "
+        + "instead.\n\n"
+        + "Must be exactly 5 characters - the field will not accept more, and OK will "
+        + "refuse to save fewer.");
+    mb.open();
+  }
+
+  private void showParameterHelp() {
+    MessageBox mb = new MessageBox(shell, SWT.ICON_INFORMATION | SWT.OK);
+    mb.setText("Using the Parameter/Variable Name field");
+    mb.setMessage(
+        "Enter the bare name of a named parameter or variable - do not include the "
+        + "${...} wrapper (enter DOC_ID_PREFIX, not ${DOC_ID_PREFIX}).\n\n"
+        + "This can be:\n"
+        + "  - A named parameter defined on this transformation (Edit > Settings > "
+        + "Parameters tab), or passed in from a job/kitchen.sh/pan.sh -param: argument.\n"
+        + "  - A variable set upstream in this job/transformation, e.g. by a "
+        + "\"Set Variables\" step.\n\n"
+        + "It is resolved once when the step starts, so the same value is used for "
+        + "every row processed in this run - it will not change row to row. "
+        + "(If you need a different prefix per row, use \"Field from stream\" instead.)\n\n"
+        + "The resolved value must be exactly 5 characters. If the parameter/variable "
+        + "was never set, it resolves to the literal, unmistakable text \"${NAME}\" - "
+        + "and the step will fail with a clear error showing that text.");
     mb.open();
   }
 }
