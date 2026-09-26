@@ -291,6 +291,23 @@ class PrefixSourceTest {
     }
 
     @Test
+    @DisplayName("Parameter mode: name typed with a ${...} wrapper already included still resolves correctly")
+    void parameterMode_nameWithWrapperAlreadyIncluded_stillResolves() throws Exception {
+        TestableStep step = new TestableStep("run-4b");
+        step.setVariable("MY_PREFIX_PARAM", "ABCDE");
+        IdGeneratorStepMeta meta = TestableStep.defaultMeta();
+        meta.setPrefixSourceType(IdGeneratorStepMeta.SOURCE_PARAMETER);
+        // User typed the name Kettle-variable-style, wrapper included -
+        // must not double-wrap into the unresolvable "${${MY_PREFIX_PARAM}}".
+        meta.setPrefixParameter("${MY_PREFIX_PARAM}");
+
+        List<String> ids = step.generateIds(meta, 1);
+
+        assertEquals(1, ids.size());
+        assertTrue(ids.get(0).startsWith("ABCDE"), ids.get(0));
+    }
+
+    @Test
     @DisplayName("Parameter mode: an unset variable throws with the literal \"${NAME}\" placeholder visible in the message")
     void parameterMode_unsetVariable_throwsWithPlaceholderVisible() {
         TestableStep step = new TestableStep("run-5");

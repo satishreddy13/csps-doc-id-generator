@@ -102,7 +102,7 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
       // useful here: the length check in processRow() will then fail with
       // an error message showing the literal "${NAME}" text, an
       // unmistakable, self-diagnosing symptom of an unset variable.
-      String name = meta.getPrefixParameter() == null ? "" : meta.getPrefixParameter();
+      String name = stripVariableWrapper(meta.getPrefixParameter());
       data.resolvedParameterPrefix = environmentSubstitute("${" + name + "}");
     }
 
@@ -263,5 +263,23 @@ public class IdGeneratorStep extends BaseStep implements StepInterface {
     for (int i = s.length(); i < width; i++) sb.append(padChar);
     sb.append(s);
     return sb.toString();
+  }
+
+  /**
+   * The Parameter/Variable name field is meant to hold a bare name (e.g.
+   * DOC_ID_PREFIX), but users commonly type it Kettle-variable-style with
+   * the ${...} wrapper already included, out of habit from other fields
+   * in the UI. Since init() always wraps the name in "${" + name + "}"
+   * itself, an already-wrapped name would double-wrap into the literal,
+   * unresolvable "${${NAME}}". Stripping one layer of wrapping here makes
+   * both forms work.
+   */
+  private static String stripVariableWrapper(String name) {
+    if (name == null) return "";
+    String trimmed = name.trim();
+    if (trimmed.startsWith("${") && trimmed.endsWith("}")) {
+      return trimmed.substring(2, trimmed.length() - 1);
+    }
+    return trimmed;
   }
 }
