@@ -1,8 +1,10 @@
 package com.example.pdi.plugin.idgenerator;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -33,7 +35,13 @@ class TestableStep extends IdGeneratorStep {
 
     private final Queue<Object[]>  inputQueue  = new LinkedList<>();
     private final List<Object[]>   outputRows  = new ArrayList<>();
-    private final RowMeta          inputMeta   = new RowMeta();
+    private RowMetaInterface       inputMeta   = new RowMeta();
+
+    /** Configured via setVariable(); environmentSubstitute() consults this
+     *  before falling back to the real stub's identity-function behavior -
+     *  added for the prefix-source feature's PARAMETER mode, which needs
+     *  ${NAME} to actually resolve to a configured test value. */
+    private final Map<String, String> variables = new HashMap<>();
 
     TestableStep(String runId) {
         super(stepMeta(), new IdGeneratorStepData(), 0, new TransMeta(), transWithId(runId));
@@ -44,6 +52,24 @@ class TestableStep extends IdGeneratorStep {
     /** Add a raw input row (use {@code new Object[0]} for an empty pass-through row). */
     void addInputRow(Object... fields) {
         inputQueue.add(fields);
+    }
+
+    /** Overrides the default empty RowMeta returned by getInputRowMeta() -
+     *  needed for FIELD-source tests, where a row needs named fields for
+     *  resolvePrefix() to look up by name. */
+    void setInputRowLayout(RowMetaInterface rowMeta) {
+        this.inputMeta = rowMeta;
+    }
+
+    /** Configures what environmentSubstitute("${name}") resolves to - the
+     *  real stub's environmentSubstitute() is an identity function (it does
+     *  not actually resolve ${...} the way real Kettle does), so PARAMETER-
+     *  source tests that need a real resolved value configure it here. A
+     *  variable that's never configured still returns its "${name}" input
+     *  unchanged, same as the real stub's default and real Kettle's actual
+     *  behavior for a variable that was never set. */
+    void setVariable(String name, String value) {
+        variables.put("${" + name + "}", value);
     }
 
     List<Object[]> getOutputRows() {
@@ -94,6 +120,11 @@ class TestableStep extends IdGeneratorStep {
     public void putRow(RowMetaInterface rowMeta, Object[] row) {
         outputRows.add(row);
         // do not call super – avoids mock infrastructure requirements
+    }
+
+    @Override
+    public String environmentSubstitute(String value) {
+        return variables.containsKey(value) ? variables.get(value) : value;
     }
 
     // ---- static factories ----
