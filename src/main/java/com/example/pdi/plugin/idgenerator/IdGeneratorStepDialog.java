@@ -352,7 +352,14 @@ public class IdGeneratorStepDialog extends BaseStepDialog implements StepDialogI
         prefixStack.topControl = manualPanel;
         break;
     }
-    prefixStackComposite.layout();
+    // The three panels are not the same height (parameterPanel has an extra
+    // wrapped note label), so a plain prefixStackComposite.layout() is not
+    // enough: it only re-lays-out within the composite's existing bounds,
+    // it does not ask the shell's FormLayout to recompute that composite's
+    // own size. Without a full shell layout, switching to a taller panel
+    // after the dialog is already open can clip its content or overlap the
+    // OK/Cancel buttons below.
+    shell.layout(true, true);
   }
 
   private void getData() {
